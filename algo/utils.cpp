@@ -1,120 +1,142 @@
 #include <stdlib.h>     /* srand, rand */
 #include <time.h>       /* time */
-#include <list>
+#include <vector>
 #include <string>
-
-#define SEED 10
+#include <iostream>
+#include <math.h>       /* sqrt */
+#include <numeric>      /* lcm: least common multiple */
 
 using namespace std;
 
-// the data to be shared between pub key and private key, so that they can be constructed as a pair
-struct data_shared{
-    unsigned long int prime_1, prime_2, phi, pub_key_n, encryption, private_key_m;
-}data_shared;
+#define PRIME_RANGE 256
 
-bool _check_prime_num(unsigned long int num){
-    unsigned long int i, count = 0;
-    for(i=2; i < num; i++){
-        if (num % i == 0)
-            count++;
-    }
-    if(count >= 1)
-    return false;
-    else
-    return true;
-}
-
-bool _check_is_a_factor(unsigned long int num){
-    int i, count = 0;
-    for(i = 2; i < num; i++){
-        if (num % i == 0)
-            count++;
-    }
-    if(count >= 1)
-    return true;
-    else
-    return false;
-}
-
-unsigned long int _gen_prime_num(){
-    srand(SEED);
-    unsigned long int num;
-    bool isPrime;
-    while(1){
-        num = rand()%1000; // to contain the num in [0, 999]
-        isPrime = _check_prime_num(num);
-        if(isPrime)
-        return num;
-    }
-}
-
-struct data_shared _get_pub_key(){
-    srand(SEED);
-    unsigned long int prime_1, prime_2;
-    prime_1 = _gen_prime_num();
-    prime_2 = _gen_prime_num();
-
-    unsigned long int pub_key_n = prime_1 * prime_2;
-    unsigned long int phi = (prime_1 - 1) * (prime_2 - 1);
-
-    unsigned long int encryption;
-    while(1){
-        encryption = rand() % phi;
-        if (!_check_is_a_factor(encryption))
-            break;
-    } 
-
-    // to store the two components of pub keys to a cpp vector
-    (data_shared).prime_1 = prime_1;
-    (data_shared).prime_2 = prime_2;
-    (data_shared).phi = phi;
-    (data_shared).pub_key_n = pub_key_n;
-    (data_shared).encryption = encryption;
-
-    return data_shared;
-}
-
-struct data_shared _get_private_key(){
-    data_shared = _get_pub_key();
-
-    unsigned int k = 2;
-
-    unsigned long int private_key_m = (k * data_shared.phi + 1) / data_shared.encryption;
-    data_shared.private_key_m = private_key_m;
-    
-    return data_shared;
-}
-
-class produce_key_pair{
+class generate_key_pair{
     private:
-        struct data_shared get_key_data();
+        unsigned long int _gcd(unsigned long int a, unsigned long int b);
+        bool _IsPrime(unsigned long int num);
+        int _generate_prime(int range);
+        vector<unsigned long int> _generate_all_key();
+        unsigned long int _modInverse(unsigned long int a, unsigned long int m);
 
     public:
-        produce_key_pair();
+        generate_key_pair();
 
-        unsigned long int pub_key_n;
-        unsigned long int encryption;
-        unsigned long int private_key_m;
+        unsigned long int e; // encryption
+        unsigned long int d; // decryption
+        unsigned long int n; // n
 };
 
-struct data_shared produce_key_pair::get_key_data(){
-    data_shared = _get_private_key();
-    return data_shared;
+// the key pair constructor
+generate_key_pair::generate_key_pair(){
+    vector<unsigned long int> key_vector = _generate_all_key();
+    n = key_vector[0];
+    e = key_vector[1];
+    d = key_vector[2];
 }
 
-produce_key_pair::produce_key_pair(){
-    struct data_shared data_shared = get_key_data();
-    produce_key_pair::pub_key_n = data_shared.pub_key_n;
-    produce_key_pair::encryption = data_shared.encryption;
-    produce_key_pair::private_key_m = data_shared.private_key_m;
+// greatest common divisor
+unsigned long int generate_key_pair::_gcd(unsigned long int a, unsigned long int b){
+    unsigned long int tmp_int;
+    while(a != 0){
+        tmp_int = b % a;
+        b = a;
+        a = tmp_int;
+    }
+    return b;
 }
 
-list<int> encrypt_msg(string input_str){
-    list<int> encrypted_l;
-    int str_len = input_str.size();
-    for (int i = 0; i < str_len; i++){
-        encrypted_l.push_back(input_str[i]);
-    } 
+// primality check
+bool generate_key_pair::_IsPrime(unsigned long int number){
+    if(number<2)
+        return false;
+    if(number==2)
+        return true;
+    if(number%2==0)
+        return false;
+    for(int i=3;i<=sqrt(number);i += 2)
+    {
+        if(number%i==0)
+            return false;
+    }
+    return true;
+}
 
-    return encrypted_l;
+// for large number mod power calculation
+unsigned long long mod_pow(unsigned long long base, unsigned long long exponent, unsigned long long modulus){
+    if (exponent == 0) return 1;
+    unsigned long long aux = 1;
+    while(exponent > 1) {
+        if (exponent % 2 != 0) {
+            aux *= base;
+            aux %= modulus;
+        }
+        base *= base;
+        base %= modulus;
+        exponent /= 2;
+    }
+    return (base*aux) % modulus;
+}
+
+// find mod inverse
+unsigned long int generate_key_pair::_modInverse(unsigned long int a, unsigned long int m)
+{ 
+    a = a % m; 
+    for (unsigned long int x = 1; x < m; x++) 
+       if ((a * x) % m == 1) 
+          return x;
+    return 0; 
+} 
+
+// generate prime given a range as the argument
+int generate_key_pair::_generate_prime(int range){
+    int candidate_num;
+    while(1){
+        candidate_num = rand() % range;
+        if (_IsPrime(candidate_num))
+        break;
+    }
+    return candidate_num;
+}
+
+vector<unsigned long int> generate_key_pair::_generate_all_key(){
+    // step 1: p * q 
+    unsigned long int prime_1 = (unsigned long int)_generate_prime(PRIME_RANGE);
+    unsigned long int prime_2 = (unsigned long int)_generate_prime(PRIME_RANGE);
+    unsigned long int n = prime_1 * prime_2;
+
+    // step 2: a new prime e for encryption, relatively to (p - 1) * (q - 1)
+    unsigned long int e;
+    unsigned long int phi = (prime_1 - 1) * (prime_2 - 1);
+    unsigned long int prime_lcm = (unsigned long int)lcm(prime_1 - 1, prime_2 - 1);
+    cout << prime_lcm << endl;
+    while(1){
+        e = (unsigned long int)(rand() % prime_lcm);
+        if (_IsPrime(e))
+            if (_gcd(e, prime_lcm) == 1)
+            break;
+    }
+
+    // step 3: generate private key d via mod inverse of e
+    unsigned long int d;
+    d = _modInverse(e, phi);
+    if (d == 0)
+    throw invalid_argument("failed");
+
+    vector<unsigned long int> return_vector;
+
+    return_vector.push_back(n);
+    return_vector.push_back(e);
+    return_vector.push_back(d);
+
+    return return_vector;
+}
+
+unsigned long long int encrypt_msg(char raw_txt, unsigned long int n, unsigned long int e){
+    unsigned long long int tmp = mod_pow(raw_txt, e, n);
+    return tmp;
+}
+
+unsigned long long int decrypt_msg(unsigned long int cipher_txt, unsigned long int n, unsigned long int d){
+    unsigned long long int tmp = mod_pow(cipher_txt, d, n);
+    return tmp;
 }

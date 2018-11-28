@@ -1,5 +1,6 @@
 #include "utils.cpp"
 
-struct data_shared;
+class generate_key_pair;
 
-class produce_key_pair;
+unsigned long long int encrypt_msg(char raw_txt, unsigned long int n, unsigned long int e);
+unsigned long long int decrypt_msg(unsigned long int cipher_txt, unsigned long int n, unsigned long int d);
