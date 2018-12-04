@@ -49,7 +49,7 @@ void *get_in_addr(struct sockaddr *sa)
 
 int main(void){
     int sockfd, new_fd;  // listen on sock_fd, new connection on new_fd
-    int numbytes; // already recv number
+    int numbytes = 0; // already recv number
     struct addrinfo hints, *servinfo, *p;
     struct sockaddr_storage their_addr; // connector's address information
     socklen_t sin_size;
@@ -92,7 +92,7 @@ int main(void){
             perror("server: bind");
             continue;
         }
-        cout << p->ai_family << endl;
+
         break;
     }
 
@@ -131,30 +131,19 @@ int main(void){
         s, sizeof s);
     printf("server: got connection from %s\n", s);
 
-    // fork() two processes that one for recv and one for send
+    close(sockfd);  // parent doesn't need this
 
-        if (!fork()) { // this is the child process, fork() == 0 indicates a running child pid
-            close(sockfd); // child doesn't need the listener
-            while(1) {  // main accept() loop
-            cout << "type a message to send" << endl;
-            string sendt_msg;
-            cin >> sendt_msg;
-            if (send(new_fd, sendt_msg.c_str(), sendt_msg.length(), 0) == -1)
-                perror("send");
-            exit(0);
-            }
-        }
-        else{
-            while(1){
-            if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
-                perror("recv");
-                exit(1);
-            }
-            buf[numbytes] = '\0';
+    int data_len;
+    if ((numbytes = recv(new_fd, &data_len, 1, MSG_WAITALL)) == -1) {
+        perror("recv");
+        exit(1);
+    }
+    if ((numbytes = recv(new_fd, &buf, data_len, MSG_WAITALL)) == -1) {
+        perror("recv");
+        exit(1);
+    }
+    buf[numbytes] = '\0';
+    printf("server: received '%s'\n",buf);
 
-            printf("client: received '%s'\n",buf);
-            }
-        }
-        close(new_fd);  // parent doesn't need this
-        return 0;
+    return 0;
 }

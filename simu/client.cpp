@@ -44,7 +44,7 @@ void *get_in_addr(struct sockaddr *sa)
 
 int main(int argc, char *argv[])
 {
-    int sockfd, numbytes;  
+    int sockfd, numbytes = 0;  
     char buf[MAXDATASIZE];
     struct addrinfo hints, *servinfo, *p;
     int rv;
@@ -105,26 +105,17 @@ int main(int argc, char *argv[])
         perror("sigaction");
         exit(1);
     }
-
-    if(!fork()){ // child process runs
-        while(1){
-        if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
-            perror("recv");
-            exit(1);
-        }
-        buf[numbytes] = '\0';
-
-        printf("client: received '%s'\n",buf);
-        }
+    cout << "type a message to send" << endl;
+    string sendt_msg;
+    cin >> sendt_msg;
+    numbytes = sendt_msg.length();
+    if (send(sockfd, &numbytes, 1, 0) == -1){
+        perror("send");
+        exit(0);
     }
-    else{           
-        while(1){ 
-        cout << "type a message to send" << endl;
-        string sendt_msg;
-        cin >> sendt_msg;
-        if (send(sockfd, sendt_msg.c_str(), sendt_msg.length(), 0) == -1)
-            perror("send");
-        }
+    if (send(sockfd, sendt_msg.c_str(), sendt_msg.length(), 0) == -1){
+        perror("send");
+        exit(0);
     }
 
     freeaddrinfo(servinfo); // all done with this structure
