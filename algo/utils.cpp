@@ -4,7 +4,6 @@
 #include <string>
 #include <iostream>
 #include <math.h>       /* sqrt */
-#include <numeric>      /* lcm: least common multiple */
 
 using namespace std;
 
@@ -13,6 +12,7 @@ using namespace std;
 class generate_key_pair{
     private:
         unsigned long int _gcd(unsigned long int a, unsigned long int b);
+        unsigned long int _lcm(unsigned long int a, unsigned long int b);
         bool _IsPrime(unsigned long int num);
         int _generate_prime(int range);
         vector<unsigned long int> _generate_all_key();
@@ -45,6 +45,18 @@ unsigned long int generate_key_pair::_gcd(unsigned long int a, unsigned long int
     return b;
 }
 
+// least common multiple
+unsigned long int generate_key_pair::_lcm(unsigned long int a, unsigned long int b){
+    unsigned long int minMultiple;
+    minMultiple = (a>b) ? a : b;
+    while(1)
+    if (minMultiple % a == 0 && minMultiple % b == 0)
+    break;
+    else
+    minMultiple++;
+    return minMultiple;
+}
+
 // primality check
 bool generate_key_pair::_IsPrime(unsigned long int number){
     if(number<2)
@@ -62,9 +74,9 @@ bool generate_key_pair::_IsPrime(unsigned long int number){
 }
 
 // for large number mod power calculation
-unsigned long long mod_pow(unsigned long long base, unsigned long long exponent, unsigned long long modulus){
+unsigned long long int mod_pow(unsigned long long int base, unsigned long long int exponent, unsigned long long int modulus){
     if (exponent == 0) return 1;
-    unsigned long long aux = 1;
+    unsigned long long int aux = 1;
     while(exponent > 1) {
         if (exponent % 2 != 0) {
             aux *= base;
@@ -107,7 +119,7 @@ vector<unsigned long int> generate_key_pair::_generate_all_key(){
     // step 2: a new prime e for encryption, relatively to (p - 1) * (q - 1)
     unsigned long int e;
     unsigned long int phi = (prime_1 - 1) * (prime_2 - 1);
-    unsigned long int prime_lcm = (unsigned long int)lcm(prime_1 - 1, prime_2 - 1);
+    unsigned long int prime_lcm = (unsigned long int)_lcm(prime_1 - 1, prime_2 - 1);
     cout << prime_lcm << endl;
     while(1){
         e = (unsigned long int)(rand() % prime_lcm);

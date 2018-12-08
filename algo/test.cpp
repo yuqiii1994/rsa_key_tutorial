@@ -2,7 +2,7 @@
 #include <vector> 
 #include <string.h>
 #include <string>
-#include "rsa_algo.hpp"
+#include "utils.hpp"
 
 using namespace std;
 
@@ -19,8 +19,8 @@ int main(){
 
     unsigned long long int decipher_txt = decrypt_msg(cipher_txt, generate_key_pair_obj.n, generate_key_pair_obj.d);
 
-    cout << (int)a << endl;
-    cout << cipher_txt << endl;
-    cout << decipher_txt << endl;
+    cout << "sent char" << (int)a << endl;
+    cout << "encrypted char" << cipher_txt << endl;
+    cout << "decrypted char" << decipher_txt << endl;
     return 0;
 }
